@@ -1,68 +1,43 @@
-# Secret Contracts Starter Pack
+# BlackJack over Secret Network
 
-This is a template to build secret contracts in Rust to run in
-[Secret Network](https://github.com/enigmampc/SecretNetwork).
-To understand the framework better, please read the overview in the
-[cosmwasm repo](https://github.com/CosmWasm/cosmwasm/blob/master/README.md),
-and dig into the [cosmwasm docs](https://www.cosmwasm.com).
-This assumes you understand the theory and just want to get coding.
+An implementation of a single-session BlackJack over Secret network.
+In this game you will be able to double your money in less than a minute!
 
-## Creating a new repo from template
+## Rules
 
-Assuming you have a recent version of rust and cargo installed (via [rustup](https://rustup.rs/)),
-then the following should get you a new repo to start a contract:
+1. The goal of blackjack is to beat the dealer's hand without going over 21.
+2. Face cards are worth 10. Aces are worth 1 or 11, whichever makes a better hand.
+3. Each player starts with two cards, one of the dealer's cards is hidden until the end.
+4. To 'Hit' is to ask for another card. To 'Stand' is to hold your total and end your turn.
+5. If you go over 21 you bust, and the dealer wins regardless of the dealer's hand.
+6. If you are dealt 21 from the start (Ace & 10), you got a blackjack.
+7. Blackjack means you win 1.5 the amount of your bet (WOW!!!!!)
+8. Dealer will hit until his/her cards total 17 or higher.
+9. Split can be done when you have two of the same card - the pair is split into two hands.
+10. Splitting also doubles the bet, because each new hand is worth the original bet.
+11. You can only split on the first move.
+12. Aces can't be split.
 
-First, install
-[cargo-generate](https://github.com/ashleygwilliams/cargo-generate).
-Unless you did that before, run this line now:
+# Design
 
-```sh
-cargo install cargo-generate --features vendored-openssl
-```
+## High Level Strategy
 
-Now, use it to create your new contract.
-Go to the folder in which you want to place it and run:
+**_Note_**: In each and every time only one game session will be handled and only 6 seats will be available.
+If the queue will not be empty the first person in the queue will be able to kick one of the players that played 20+ rounds in a row (Tx fees will be payed by the kicker). In addition, the players that are playing and the first player in the queue can kick a player who won't be responsive in his turn for more than 1 minute.
 
-```sh
-cargo generate --git https://github.com/enigmampc/secret-template.git --name YOUR_NAME_HERE
-```
+**_Note_**: A bet will be approved only by checking the Bank's balance, if the bank can't afford a bet the player who tries to bet will receive a message and will get the opportunity to make another bet.
 
-You will now have a new folder called `YOUR_NAME_HERE` (I hope you changed that to something else)
-containing a simple working contract and build system that you can customize.
+## High Level Design
 
-Don't forget to change the `name` and the `authors` fields in the `Cargo.toml` file.
+The game is built with 2 contracts in total.
+The first contract (aka Bank), which is an administrative contract, will manage the funds of the game.
+The money to the winner will be transferred by the bank and the money that was lost during the game will be transferred to the bank.
+The second contract (aka Game) is the actual game manager it will interact both with the users (To manage the game session) and with the Bank to transfer money to and from the users.
 
-## Create a Repo
+The initial balance of the Bank will be 10 SCRT.
 
-After generating, you have a initialized local git repo, but no commits, and no remote.
-Go to a server (eg. github) and create a new upstream repo (called `YOUR-GIT-URL` below).
-Then run the following:
+## Flows
 
-```sh
-# this is needed to create a valid Cargo.lock file (see below)
-cargo check
-git checkout -b master # in case you generate from non-master
-git add .
-git commit -m 'Initial Commit'
-git remote add origin YOUR-GIT-URL
-git push -u origin master
-```
+### User entry
 
-## Using your project
-
-Once you have your custom repo, you should check out [Developing](./Developing.md) to explain
-more on how to run tests and develop code. Or go through the
-[online tutorial](https://www.cosmwasm.com/docs/getting-started/intro) to get a better feel
-of how to develop.
-
-[Publishing](./Publishing.md) contains useful information on how to publish your contract
-to the world, once you are ready to deploy it on a running blockchain. And
-[Importing](./Importing.md) contains information about pulling in other contracts or crates
-that have been published.
-
-You can also find lots of useful recipes in the `Makefile` which you can use
-if you have `make` installed (very recommended. at least check them out).
-
-Please replace this README file with information about your specific project. You can keep
-the `Developing.md` and `Publishing.md` files as useful referenced, but please set some
-proper description in the README.
+asdasda
