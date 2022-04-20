@@ -1,0 +1,10 @@
+/home/lior/work/SecretJack/contract/game/target/wasm32-unknown-unknown/release/deps/secret_toolkit_snip20-fbde49d784de56b1.rmeta: /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/lib.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/batch.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/handle.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/query.rs
+
+/home/lior/work/SecretJack/contract/game/target/wasm32-unknown-unknown/release/deps/libsecret_toolkit_snip20-fbde49d784de56b1.rlib: /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/lib.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/batch.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/handle.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/query.rs
+
+/home/lior/work/SecretJack/contract/game/target/wasm32-unknown-unknown/release/deps/secret_toolkit_snip20-fbde49d784de56b1.d: /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/lib.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/batch.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/handle.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/query.rs
+
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/lib.rs:
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/batch.rs:
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/handle.rs:
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/snip20/src/query.rs:

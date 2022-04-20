@@ -1,0 +1,10 @@
+/home/lior/work/SecretJack/contract/game/target/wasm32-unknown-unknown/release/deps/secret_toolkit_permit-29049e0c4e1e1053.rmeta: /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/lib.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/funcs.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/state.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/structs.rs
+
+/home/lior/work/SecretJack/contract/game/target/wasm32-unknown-unknown/release/deps/libsecret_toolkit_permit-29049e0c4e1e1053.rlib: /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/lib.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/funcs.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/state.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/structs.rs
+
+/home/lior/work/SecretJack/contract/game/target/wasm32-unknown-unknown/release/deps/secret_toolkit_permit-29049e0c4e1e1053.d: /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/lib.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/funcs.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/state.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/structs.rs
+
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/lib.rs:
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/funcs.rs:
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/state.rs:
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/permit/src/structs.rs:

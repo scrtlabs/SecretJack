@@ -1,0 +1,10 @@
+/home/lior/work/SecretJack/contract/bank/target/wasm32-unknown-unknown/release/deps/secret_toolkit_serialization-1b6c552a45fe06e4.rmeta: /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/lib.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/base64.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/bincode2.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/json.rs
+
+/home/lior/work/SecretJack/contract/bank/target/wasm32-unknown-unknown/release/deps/libsecret_toolkit_serialization-1b6c552a45fe06e4.rlib: /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/lib.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/base64.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/bincode2.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/json.rs
+
+/home/lior/work/SecretJack/contract/bank/target/wasm32-unknown-unknown/release/deps/secret_toolkit_serialization-1b6c552a45fe06e4.d: /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/lib.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/base64.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/bincode2.rs /home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/json.rs
+
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/lib.rs:
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/base64.rs:
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/bincode2.rs:
+/home/lior/.cargo/git/checkouts/secret-toolkit-160e502ff67bb5f6/53a2c40/packages/serialization/src/json.rs:

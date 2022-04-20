@@ -1,0 +1,1 @@
+/home/lior/work/SecretJack/contract/game/target/wasm32-unknown-unknown/release/secret_jack_game.wasm: /home/lior/work/SecretJack/contract/game/src/contract/bank_msg.rs /home/lior/work/SecretJack/contract/game/src/contract.rs /home/lior/work/SecretJack/contract/game/src/lib.rs /home/lior/work/SecretJack/contract/game/src/msg.rs /home/lior/work/SecretJack/contract/game/src/state.rs
