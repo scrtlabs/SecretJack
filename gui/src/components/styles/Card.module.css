@@ -1,0 +1,83 @@
+.card {
+  width: 60px;
+  height: 130px;
+  margin: 10px;
+  padding: 0.5em 1.5em;
+  background: rgb(230, 230, 230);
+  border-radius: 15px;
+  box-shadow: 0px 1px 10px rgb(0, 0, 0);
+  cursor: default;
+}
+
+.nocard {
+  width: 50px;
+  height: 123px;
+  margin: 10px;
+  padding: 0.5em 1.5em;
+  border: 3px solid rgb(0, 0, 0);
+  border-radius: 15px;
+  box-shadow: 0px 1px 10px rgb(0, 0, 0);
+  cursor: default;
+}
+
+.black {
+  color: black;
+}
+
+.red {
+  color: red;
+}
+
+.value {
+  font-size: 200%;
+  margin: 0;
+}
+
+.suit {
+  font-size: 300%;
+  margin: 0;
+  text-align: center;
+}
+
+@media screen and (max-width: 992px) {
+  .card {
+    width: 35px;
+    height: 90px;
+  }
+
+  .nocard {
+    width: 35px;
+    height: 90px;
+  }
+
+  .value {
+    font-size: 150%;
+  }
+
+  .suit {
+    font-size: 250%;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .card {
+    width: 22px;
+    height: 50px;
+    padding: 5px 10px;
+  }
+
+  .nocard {
+    width: 22px;
+    height: 50px;
+    padding: 5px 10px;
+    border: 1px solid rgb(0, 0, 0);
+  }
+
+  .value {
+    font-size: 75%;
+  }
+
+  .suit {
+    font-size: 125%;
+  }
+}
