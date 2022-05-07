@@ -7,9 +7,10 @@ type HandProps = {
   title: string,
   cards: any[],
   isDealer: boolean,
+  dealerScore: number,
 };
 
-const Hand: React.FC<HandProps> = ({ title, cards, isDealer }) => {
+const Hand: React.FC<HandProps> = ({ title, cards, isDealer, dealerScore }) => {
   const getEmptyCard = () => {
     if (cards.length === 0) {
       return (
@@ -23,9 +24,15 @@ const Hand: React.FC<HandProps> = ({ title, cards, isDealer }) => {
 
   const getTitle = () => {
     if(isDealer) {
-      return (
-        <h1 className={styles.title}>{title}</h1>
-      );
+      if(dealerScore !== 0) {
+        return (
+          <h1 className={styles.title}>{title} (Score: {dealerScore})</h1>
+        );
+      } else {
+        return (
+          <h1 className={styles.title}>{title}</h1>
+        );
+      }
     } 
 
     return (

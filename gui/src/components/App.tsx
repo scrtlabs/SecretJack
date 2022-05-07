@@ -400,7 +400,6 @@ const App: React.FC = () => {
       switch(ps) {
         case 'Bid':
         case 'Hit':
-          console.warn(`here`)
           newMessage = Message.hitHold;
           newButtonState = {hitDisabled: false, holdDisabled: false, standDisabled: true};
           break;
@@ -411,7 +410,7 @@ const App: React.FC = () => {
         
       let playerScore = 0;
       if(hasHand(table.players[seat].hand)) {
-        playerScore = table.players[seat].hand!.total_value;
+        playerScore = getPlayerScore(seat);
       }
         
       if(pt.player_seat !== seat) {
@@ -449,8 +448,6 @@ const App: React.FC = () => {
         }
       }
     }
-
-    console.warn(`${JSON.stringify(newButtonState)}`)
 
     updatePlayerButtons();
     parseTableState();
@@ -733,6 +730,7 @@ const App: React.FC = () => {
   }
 
   const cardToValue = (card: Card) => {
+    console.warn(card.value);
     switch(card.value) {
       case '2':
       case '3':
@@ -742,7 +740,7 @@ const App: React.FC = () => {
       case '7':
       case '8':
       case '9':
-      case '10`':
+      case '10':
         return parseInt(card.value);
       case 'J':
       case 'Q':
@@ -764,13 +762,21 @@ const App: React.FC = () => {
   }
 
   const getPlayerScore = (index: number) => {
-    if(!hasHand(table.players[index].hand)) {
+    return getHandScore(table.players[index].hand);
+  }
+
+  const getDealerScore = () => {
+    return getHandScore(table.dealer_hand);
+  }
+
+  const getHandScore = (hand: Nullable<H>) => {
+    if(!hasHand(hand)) {
       return 0;
     }
 
     let sum = 0;
     let hadAce = false;
-    let gameCards = toGameCards(table.players[index].hand!.cards);
+    let gameCards = toGameCards(hand!.cards);
     for(const card of gameCards) {
       sum += cardToValue(card);
       if(card.value === "A") {
@@ -826,7 +832,7 @@ const App: React.FC = () => {
         standEvent={stand}
         lastScoreEvent={getLastScore}
       />
-      <Hand title={`Dealer's Hand`} cards={getDealerCards()} isDealer={true} />
+      <Hand title={`Dealer's Hand`} cards={getDealerCards()} isDealer={true} dealerScore={getDealerScore()} />
       <Hands addresses={[table.players[0].address,
       table.players[1].address,
       table.players[2].address,

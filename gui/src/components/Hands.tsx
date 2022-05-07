@@ -44,7 +44,7 @@ type HandsProps = {
           {cardsArr.map((cards: any[], index: number) => {
             return (
                 <div className={styles.handContainer}>
-              <Hand title={addresses[index]} cards={cards} isDealer={false}/>
+              <Hand title={addresses[index]} cards={cards} isDealer={false} dealerScore={0}/>
               <button disabled={true} className={buttonStyles.controlButton}>Score: {scores[index]}</button>
               {getKickButton(index)}
               <button onClick={() => sitEvent(index)} disabled={sitButtonsState[index].disabled} className={buttonStyles.controlButton}>Sit</button>
