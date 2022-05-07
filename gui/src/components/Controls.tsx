@@ -2,32 +2,37 @@ import React, { useState, useEffect } from 'react';
 import styles from './styles/Controls.module.css';
 
 type ControlsProps = {
-  balance: number,
-  gameState: number,
+
+  isFirstRound: boolean,
+  isMyRound: boolean,
+  isSeated: boolean,
   buttonState: any,
   betEvent: any,
   hitEvent: any,
+  holdEvent: any,
   standEvent: any,
-  resetEvent: any
+  lastScoreEvent: any,
 };
 
-const Controls: React.FC<ControlsProps> = ({ balance, gameState, buttonState, betEvent, hitEvent, standEvent, resetEvent }) => {
-  const [amount, setAmount] = useState(10);
+const Controls: React.FC<ControlsProps> = ({ isFirstRound, isMyRound, isSeated, buttonState, betEvent, hitEvent, holdEvent, standEvent, lastScoreEvent }) => {
+  const [amount, setAmount] = useState(1);
   const [inputStyle, setInputStyle] = useState(styles.input);
 
   useEffect(() => {
     validation();
-  }, [amount, balance]);
+  }, [amount]);
 
   const validation = () => {
-    if (amount > balance) {
+    if (amount < 1) {
       setInputStyle(styles.inputError);
       return false;
     }
-    if (amount < 0.01) {
+
+    if (Math.floor(amount).toString() !== amount.toString()) {
       setInputStyle(styles.inputError);
       return false;
     }
+
     setInputStyle(styles.input);
     return true;
   }
@@ -43,7 +48,23 @@ const Controls: React.FC<ControlsProps> = ({ balance, gameState, buttonState, be
   }
 
   const getControls = () => {
-    if (gameState === 0) {
+    if(!isMyRound) {
+      if (isSeated) {
+        return (
+          <div className={styles.controlsContainer}>
+            <button onClick={() => standEvent()} disabled={buttonState.standDisabled} className={styles.button}>Stand</button>
+            <button onClick={() => lastScoreEvent()} disabled={buttonState.standDisabled} className={styles.button}>Last Score</button>
+          </div>
+        );
+      }
+
+      return (
+        <div className={styles.controlsContainer}>
+        </div>
+      );
+      
+    } 
+    if (isFirstRound) {
       return (
         <div className={styles.controlsContainer}>
           <div className={styles.betContainer}>
@@ -51,6 +72,9 @@ const Controls: React.FC<ControlsProps> = ({ balance, gameState, buttonState, be
             <input autoFocus type='number' value={amount} onChange={amountChange} className={inputStyle} />
           </div>
           <button onClick={() => onBetClick()} className={styles.button}>Bet</button>
+          <button onClick={() => standEvent()} disabled={buttonState.standDisabled} className={styles.button}>Stand</button>
+          <button onClick={() => lastScoreEvent()} disabled={buttonState.standDisabled} className={styles.button}>Last Score</button>
+          
         </div>
       );
     }
@@ -58,8 +82,9 @@ const Controls: React.FC<ControlsProps> = ({ balance, gameState, buttonState, be
       return (
         <div className={styles.controlsContainer}>
           <button onClick={() => hitEvent()} disabled={buttonState.hitDisabled} className={styles.button}>Hit</button>
+          <button onClick={() => holdEvent()} disabled={buttonState.holdDisabled} className={styles.button}>Hold</button>
           <button onClick={() => standEvent()} disabled={buttonState.standDisabled} className={styles.button}>Stand</button>
-          <button onClick={() => resetEvent()} disabled={buttonState.resetDisabled} className={styles.button}>Reset</button>
+          <button onClick={() => lastScoreEvent()} disabled={buttonState.standDisabled} className={styles.button}>Last Score</button>
         </div>
       );
     }

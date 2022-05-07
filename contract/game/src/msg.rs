@@ -6,12 +6,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InitMsg {
     pub bank_address: HumanAddr,
-    pub owner: HumanAddr,
     pub bank_code_hash: String,
     pub secret: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum GameState {
     NoPlayers,
     PlayerTurn { player_seat: u8, is_first: bool, turn_start_time: u64 },
@@ -19,12 +18,12 @@ pub enum GameState {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct PlayerDeck {
+pub struct PlayerHand {
     pub cards: Vec<Card>,
     pub total_value: u8,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum PlayerState {
     NotPlaying,
     Bid,
@@ -35,20 +34,15 @@ pub enum PlayerState {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Player {
     pub address: HumanAddr,
-    pub deck: Option<PlayerDeck>,
+    pub hand: Option<PlayerHand>,
     pub state: PlayerState,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct PublicTableData {
+pub struct Table {
     pub players_count: u8,
     pub players: [Player; 6],
-    pub dealer_deck: Option<PlayerDeck>,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Table {
-    pub public_table_data: PublicTableData,
+    pub dealer_hand: Option<PlayerHand>,
     pub state: GameState,
 }
 
@@ -56,6 +50,21 @@ pub struct Table {
 pub struct GameDeck {
     pub deck: Vec<Card>,
     pub next_free_card : u8,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct PlayerResult {
+    pub address: HumanAddr,
+    pub won : bool,
+    pub score : u8,
+    pub reward: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "snake_case")]
+pub struct Scores {
+    pub players: [Option<PlayerResult>; 6],
+    pub dealer : PlayerResult,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -82,10 +91,6 @@ pub enum HandleMsg {
     Hit {
         seat: u8,
     },
-    // Administrative
-    ChangeOwner {
-        new_owner: HumanAddr,
-    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -93,7 +98,9 @@ pub enum HandleMsg {
 pub enum QueryMsg {
     GetUserBalance {
         address: HumanAddr,
-    }
+    },
+    GetTable { },
+    GetLastScore { }
 }
 
 /// Responses from handle function
@@ -105,8 +112,15 @@ pub enum HandleAnswer {
 
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum QueryAnswer {
     GetUserBalance {
         balance: Uint128,
     },
+    GetTable {
+        table: Vec<u8>,
+    },
+    GetLastScore {
+        last_score: Vec<u8>,
+    }
 }

@@ -1,9 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect} from 'react';
 import Status from './Status';
 import Controls from './Controls';
 import Hand from './Hand';
 import Hands from './Hands';
 import jsonData from '../deck.json';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { SecretNetworkClient, Wallet } from "secretjs";
+
+declare global {
+  interface Window {
+    keplr:any;
+  }
+}
 
 type Nullable<T> = T | null;
 type PT = {
@@ -24,318 +33,828 @@ type Table = {
   state: GameState;
 };
 
+type PlayerScore = {
+  address: string;
+  won: boolean;
+  score: number;
+  reward: string;
+};
+type Scores = {
+  players: Nullable<PlayerScore>[];
+  dealer: PlayerScore;
+};
+
+function isPlayerTurn(state: GameState): state is PT {
+  return (state as PT).PlayerTurn !== undefined;
+}
+
+function hasHand(hand: Nullable<H>): hand is H {
+  return (JSON.stringify(hand) !== "null");
+}
+
+function hasPlayerScore(score: Nullable<PlayerScore>): score is PlayerScore {
+  return (JSON.stringify(score) !== "null");
+}
+
+function winNotification(score: number, dealerScore: number, award: number) {
+  toast.success(`Wow! you won ${award} u𝕊 with the score of ${score} against ${dealerScore}`, {
+    autoClose: 7000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: false,
+    progress: undefined,
+    });
+}
+
+function lostNotification(score: number, dealerScore: number, bid: number) {
+  toast.error(`Oh well.... you lost ${bid} u𝕊 with the score of ${score} against ${dealerScore}`, {
+    autoClose: 7000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: false,
+    progress: undefined,
+    });
+}
+
+function loading() {
+  toast.info("Loading...", {
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: false,
+    progress: undefined,
+    });
+}
+
 const App: React.FC = () => {
-  enum GameState {
-    bet,
-    init,
-    userTurn,
-    dealerTurn
-  }
-
-  enum Deal {
-    p0,
-    p1,
-    p2,
-    p3,
-    p4,
-    p5,
-    dealer,
-    hidden
-  }
-
   enum Message {
+    sit = 'Take a sit',
+    dealerTurn = 'Now it is my turn!',
+    gameSit = 'Game is on, take a sit',
     bet = 'Place a Bet!',
-    hitStand = 'Hit or Stand?',
+    hitHold = 'Hit or Hold?',
     bust = 'Bust!',
+    blackjack = 'It is your lucky day!',
+    beReady = 'Be ready, you are playing soon!',
+    nextRound = 'Game is on, wait for the next round',
     userWin = 'You Win!',
-    dealerWin = 'Dealer Wins!',
-    tie = 'Tie!'
-  }
+    tie = 'Tie!',
 
-  const data = JSON.parse(JSON.stringify(jsonData.cards));
-  const [deck, setDeck]: any[] = useState(data);
+  }
 
   const [address, setAddress] = useState("");
 
-  const m : Table = {
+  const [table, setTable] = useState<Table>({
     players_count: 0,
-    players: [],
+    players: [{
+      address: '',
+      hand: {
+        cards: [],
+        total_value: 0
+      },
+      state: ''
+    },{
+      address: '',
+      hand: {
+        cards: [],
+        total_value: 0
+      },
+      state: ''
+    },{
+      address: '',
+      hand: {
+        cards: [],
+        total_value: 0
+      },
+      state: ''
+    },{
+      address: '',
+      hand: {
+        cards: [],
+        total_value: 0
+      },
+      state: ''
+    },{
+      address: '',
+      hand: {
+        cards: [],
+        total_value: 0
+      },
+      state: ''
+    },{
+      address: '',
+      hand: {
+        cards: [],
+        total_value: 0
+      },
+      state: ''
+    },],
     dealer_hand: null,
     state: ''
-  };
-  const [table, setTable]: Table = useState({
-
   });
-  const [scores, setScores]: any[] = useState([0,0,0,0,0,0]);
-  const [counts, setCounts]: any[] = useState([0,0,0,0,0,0]);
 
-  const [dealerCards, setDealerCards]: any[] = useState([]);
-  const [dealerScore, setDealerScore] = useState(0);
-  const [dealerCount, setDealerCount] = useState(0);
+  const [balance, setBalance] = useState(0);
 
-  const [balance, setBalance] = useState(100);
-  const [bet, setBet] = useState(0);
-
-  const [gameState, setGameState] = useState(GameState.init);
-  const [message, setMessage] = useState("");
-  const [buttonState, setButtonState] = useState({
+  const [controlsState, setControlsState] = useState({
+  message: "", 
+  buttonState: {
     hitDisabled: false,
+    holdDisabled: false,
     standDisabled: false,
-    resetDisabled: true
+  },
+  kickButtonsState: [{canBeKicked: false, kickTimer:100},{canBeKicked: true, kickTimer:0},{canBeKicked: false, kickTimer:100},{canBeKicked: false, kickTimer:100},{canBeKicked: false, kickTimer:100},{canBeKicked: false, kickTimer:100}],
+  sitButtonsState: [{disabled:false},{disabled:true},{disabled:false},{disabled:false},{disabled:false},{disabled:false}]
   });
 
-  useEffect(() => {
-    if (gameState === GameState.init) {
-      setGameState(GameState.userTurn);
-      setMessage(Message.hitStand);
-    }
-  }, [gameState]);
+  const [client, setClient] = useState<SecretNetworkClient>();
+  const [onlyOnce, setOnlyOnce] = useState(true);
+  const [onHold, setOnHold] = useState(false);
+  const gameCodeHash : string = "8168EA555899D9FA019726628206C18AD8FFB70A3C557BDBC0E6661E829F071F";
+  const gameAddress : string = "secret1sa9g3zz2q653x8c9ws2zzq7etkcpe8jm0cjxaa";
 
-  useEffect(() => {
-    let temp_counts = counts;
-    let temp_scores = scores;
+  const getClient = async () => {
+    await window.keplr.enable('pulsar-2');
+    const keplrOfflineSigner = window.keplr.getOfflineSignerOnlyAmino('pulsar-2');
+    const [{ address: keplrAddress }] = await keplrOfflineSigner.getAccounts();
+    const walletPubAddress = keplrAddress;
 
-    for (var i:number = 0; i < 6; i++) {
-      temp_scores[i] = calculate(cards[i]);
-      temp_counts[i] = cards[i].length;
-    }
-
-    setScores(temp_scores);
-    setCounts(temp_counts);
-
-    if (gameState === GameState.userTurn) {
-      if (scores[0] === 21) {
-        buttonState.hitDisabled = true;
-        setButtonState({ ...buttonState });
-      }
-      else if (scores[0] > 21) {
-        bust();
-      }
-    }
-  });
-
-  useEffect(() => {
-    setDealerScore(calculate(dealerCards));
-    setDealerCount(dealerCount + 1);
-  }, [dealerCards]);
-
-  useEffect(() => {
-    if (gameState === GameState.dealerTurn) {
-      if (dealerScore >= 17) {
-        checkWin();
-      }
-      else {
-        drawCard(Deal.dealer);
-      }
-    }
-  }, [dealerCount]);
-
-  const resetGame = () => {
-    console.clear();
-    setDeck(data);
-
-    setCards([[], [], [], [], [], []]);
-    setScores([0,0,0,0,0,0]);
-    setCounts([0,0,0,0,0,0]);
-
-    setDealerCards([]);
-    setDealerScore(0);
-    setDealerCount(0);
-
-    setBet(0);
-
-    setGameState(GameState.bet);
-    setMessage(Message.bet);
-    setButtonState({
-      hitDisabled: false,
-      standDisabled: false,
-      resetDisabled: true
+    setAddress(walletPubAddress);
+    const nodeRpcAddress : string = "https://lior.node.scrtlabs.com";
+    const client = await SecretNetworkClient.create({
+      grpcWebUrl: nodeRpcAddress,
+      chainId: 'pulsar-2',
+      wallet: keplrOfflineSigner,
+      walletAddress: walletPubAddress,
     });
+  
+    return client;
   }
 
-  const placeBet = (amount: number) => {
-    setBet(amount);
-    setBalance(Math.round((balance - amount) * 100) / 100);
-    setGameState(GameState.init);
+  function toArrayBuffer(buf: Uint8Array): ArrayBuffer {
+    const ab = new ArrayBuffer(buf.length);
+    const view = new Uint8Array(ab);
+    for (let i = 0; i < buf.length; ++i) {
+      view[i] = buf[i];
+    }
+    return ab;
+  }
+  
+  const getTable = async (
+    client: SecretNetworkClient,
+    gameCodeHash: string,
+    gameAddress: string
+  ): Promise<Table> => {
+    type TableResponse = { get_table: { table: Uint8Array } };
+
+    const tableResponse = (await client.query.compute.queryContract({
+      contractAddress: gameAddress,
+      codeHash: gameCodeHash,
+      query: { get_table: {} },
+    })) as TableResponse;
+
+    return JSON.parse(
+      new TextDecoder().decode(toArrayBuffer(tableResponse.get_table.table))
+    );
   }
 
-  const drawCard = (dealType: Deal) => {
-    if (deck.length > 0) {
-      const randomIndex = Math.floor(Math.random() * deck.length);
-      const card = deck[randomIndex];
-      deck.splice(randomIndex, 1);
-      setDeck([...deck]);
-      console.log('Remaining Cards:', deck.length);
-      switch (card.suit) {
-        case 'spades':
-          dealCard(dealType, card.value, '♠');
-          break;
-        case 'diamonds':
-          dealCard(dealType, card.value, '♦');
-          break;
-        case 'clubs':
-          dealCard(dealType, card.value, '♣');
-          break;
-        case 'hearts':
-          dealCard(dealType, card.value, '♥');
-          break;
-        default:
-          break;
+  async function getScores(
+    client: SecretNetworkClient,
+    gameCodeHash: string,
+    gameAddress: string
+  ): Promise<Scores> {
+    type ScoresResponse = { get_last_score: { last_score: Uint8Array } };
+  
+    const scoresResponse = (await client.query.compute.queryContract({
+      contractAddress: gameAddress,
+      codeHash: gameCodeHash,
+      query: { get_last_score: {} },
+    })) as ScoresResponse;
+  
+    return JSON.parse(
+      new TextDecoder().decode(
+        toArrayBuffer(scoresResponse.get_last_score.last_score)
+      )
+    );
+  }
+
+  const getUserBalance = async (
+    client: SecretNetworkClient,
+    gameCodeHash: string,
+    gameAddress: string
+  ): Promise<number> => {
+    type UserBalanceResponse = { get_user_balance: { balance: string } };
+
+    const userBalanceResponse = (await client.query.compute.queryContract({
+      contractAddress: gameAddress,
+      codeHash: gameCodeHash,
+      query: { get_user_balance: { address: address } },
+    })) as UserBalanceResponse;
+
+    return parseInt(userBalanceResponse.get_user_balance.balance);
+  }
+
+  const refreshTableState = async () => {
+    const newTable = await getTable(client!, gameCodeHash, gameAddress);
+
+    setTable(newTable);
+    setBalance(await getUserBalance(client!, gameCodeHash, gameAddress));
+  }
+
+  useEffect(() => {
+    async function createClient() {
+      await window.keplr.experimentalSuggestChain({
+        chainId: "pulsar-2",
+        chainName: "Pulsar",
+        rpc: "http://40.88.137.151:26657",
+        rest: "http://40.88.137.151:1317",
+        bip44: {
+          coinType: 529,
+        },
+        bech32Config: {
+          bech32PrefixAccAddr: "secret",
+          bech32PrefixAccPub: "secretpub",
+          bech32PrefixValAddr: "secretvaloper",
+          bech32PrefixValPub: "secretvaloperpub",
+          bech32PrefixConsAddr: "secretvalcons",
+          bech32PrefixConsPub: "secretvalconspub",
+        },
+        currencies: [
+          {
+            coinDenom: "SCRT",
+            coinMinimalDenom: "uscrt",
+            coinDecimals: 6,
+            coinGeckoId: "secret",
+          },
+        ],
+        feeCurrencies: [
+          {
+            coinDenom: "SCRT",
+            coinMinimalDenom: "uscrt",
+            coinDecimals: 6,
+            coinGeckoId: "secret",
+          },
+        ],
+        stakeCurrency: {
+          coinDenom: "SCRT",
+          coinMinimalDenom: "uscrt",
+          coinDecimals: 6,
+          coinGeckoId: "secret",
+        },
+        coinType: 529,
+        gasPriceStep: {
+          low: 0.1,
+          average: 0.25,
+          high: 1,
+        },
+        features: ["secretwasm", "stargate", "ibc-transfer", "ibc-go"],
+      });
+
+      setClient(await getClient());
+    }
+
+    createClient();
+  }, []);
+
+  useEffect(() => {
+    const isAddressOk = () => {
+      if(typeof client === "undefined") {
+        return false;
+      }
+
+      return (client!.address === address);
+    }
+
+    if(onlyOnce && isAddressOk()) {
+      setInterval(refreshTableState, 1000);
+      setOnlyOnce(false);
+    }
+
+  }, [JSON.stringify(client)]);
+
+  
+
+  useEffect(() => {
+    console.info(JSON.stringify(table));
+    let newSitButtonsState = controlsState.sitButtonsState;
+    let newKickButtonsState = controlsState.kickButtonsState;
+    let newMessage = controlsState.message;
+    let newButtonState = {hitDisabled: false, holdDisabled: false, standDisabled: false};
+
+    const updatePlayerButtons = () => {
+      for (let i:number = 0; i < 6; i++) {
+        if (table.players[i].address === '') {
+          newSitButtonsState[i].disabled = (findMySeat(table) !== -1);
+          newKickButtonsState[i].canBeKicked = false;
+          newKickButtonsState[i].kickTimer = 0;
+        } else {
+          newSitButtonsState[i].disabled = true;
+          if (isPlayerTurn(table.state)) {
+            const pt = (table.state as PT).PlayerTurn;
+            if(pt.player_seat !== i) {
+              newKickButtonsState[i].canBeKicked = false;
+              newKickButtonsState[i].kickTimer = 0;
+            } else {
+              
+              newKickButtonsState[i].canBeKicked = (findMySeat(table) !== i);
+              let timer = 300 - (Math.round(Date.now() / 1000) - pt.turn_start_time);
+              if(timer < 0) {
+                timer = 0;
+              }
+
+              newKickButtonsState[i].kickTimer = timer;
+            }
+          } else {
+            newKickButtonsState[i].canBeKicked = false;
+            newKickButtonsState[i].kickTimer = 0;
+          }
+        }      
       }
     }
-    else {
-      alert('All cards have been drawn');
+    
+    const parseTableState = () => {
+      if(!isPlayerTurn(table.state)) {
+        if (table.state === "NoPlayers") {
+          newMessage = Message.sit;
+          return;
+        } 
+        
+        if(table.state === "DealerTurn") {
+          newMessage = Message.dealerTurn;
+          return;
+        }
+
+      } 
+      
+      const pt = (table.state as PT).PlayerTurn;
+      const seat = findMySeat(table);
+
+      if(seat === -1) {
+        newMessage = Message.gameSit;
+        return;
+      }
+      
+      const ps = table.players[seat].state;
+      switch(ps) {
+        case 'Bid':
+        case 'Hit':
+          console.warn(`here`)
+          newMessage = Message.hitHold;
+          newButtonState = {hitDisabled: false, holdDisabled: false, standDisabled: true};
+          break;
+        case 'Hold':
+          newButtonState = {hitDisabled: true, holdDisabled: true, standDisabled: true};
+          break;
+      }
+        
+      let playerScore = 0;
+      if(hasHand(table.players[seat].hand)) {
+        playerScore = table.players[seat].hand!.total_value;
+      }
+        
+      if(pt.player_seat !== seat) {
+        if (seat > pt.player_seat) {
+          newMessage = Message.beReady;
+          return;
+        } 
+        
+        if (playerScore === 0) {
+          newMessage = Message.nextRound;
+            return;
+        }
+
+        return;
+      }
+      
+      if (pt.is_first) {
+          newMessage = Message.bet;
+          return;
+      } 
+      
+      if(!onHold) {
+        if(playerScore === 21) {
+            newMessage = Message.blackjack;
+            newButtonState = {hitDisabled: true, holdDisabled: true, standDisabled: true};
+            hold();
+            return;
+        }
+        
+        if(playerScore > 21) {
+            newMessage = Message.bust;
+            newButtonState = {hitDisabled: true, holdDisabled: true, standDisabled: true};
+            hold();
+            return;
+        }
+      }
+    }
+
+    console.warn(`${JSON.stringify(newButtonState)}`)
+
+    updatePlayerButtons();
+    parseTableState();
+    setControlsState({
+      sitButtonsState: newSitButtonsState,
+      kickButtonsState: newKickButtonsState,
+      message: newMessage,
+      buttonState: newButtonState
+    });
+    
+  }, [JSON.stringify(table)]);
+
+  const placeBet = async (amount: number) => {
+    const seat = findMySeat(table);
+    if(seat === -1) {
+      alert("First take a seat");
+    }
+
+    loading();
+
+    const tx = await client!.tx.compute.executeContract(
+      {
+        sender: address,
+        contractAddress: gameAddress,
+        codeHash: gameCodeHash,
+        msg: {
+          bid: {
+            amount: amount.toString(),
+            seat: seat,
+          },
+        },
+        sentFunds: [{ amount: amount.toString(), denom: "uscrt" }],
+      },
+      {
+        gasLimit: 80000,
+      }
+    );
+    
+    if(tx.code !== 0) {
+      console.warn(tx.rawLog);
     }
   }
 
-  const dealCard = (dealType: Deal, value: string, suit: string) => {
-    switch (dealType) {
-      case Deal.p0:
-        cards[0].push({ 'value': value, 'suit': suit, 'hidden': false });
-        setCards(cards);
-        break;
-      case Deal.p1:
-        cards[1].push({ 'value': value, 'suit': suit, 'hidden': false });
-        setCards(cards);
-        break;
-      case Deal.p2:
-        cards[2].push({ 'value': value, 'suit': suit, 'hidden': false });
-        setCards(cards);
-        break;
-      case Deal.p3:
-        cards[3].push({ 'value': value, 'suit': suit, 'hidden': false });
-        setCards(cards);
-        break;
-      case Deal.p4:
-        cards[4].push({ 'value': value, 'suit': suit, 'hidden': false });
-        setCards(cards);
-        break;
-      case Deal.p5:
-        cards[5].push({ 'value': value, 'suit': suit, 'hidden': false });
-        setCards(cards);
-        break;
-      case Deal.dealer:
-        dealerCards.push({ 'value': value, 'suit': suit, 'hidden': false });
-        setDealerCards([...dealerCards]);
-        break;
-      case Deal.hidden:
-        dealerCards.push({ 'value': value, 'suit': suit, 'hidden': true });
-        setDealerCards([...dealerCards]);
-        break;
+  const hit = async () => {
+    const seat = findMySeat(table);
+    if(seat === -1) {
+      alert("First take a seat");
+    }
+
+    loading();
+
+    const tx = await client!.tx.compute.executeContract(
+      {
+        sender: address,
+        contractAddress: gameAddress,
+        codeHash: gameCodeHash,
+        msg: {
+          hit: {
+            seat: seat,
+          },
+        },
+        sentFunds: [],
+      },
+      {
+        gasLimit: 100000,
+      }
+    );
+
+    if(tx.code !== 0) {
+      console.warn(tx.rawLog);
+    }
+  }
+
+  const hold = async () => {
+    const seat = findMySeat(table);
+    if(seat === -1) {
+      alert("First take a seat");
+    }
+
+    loading();
+    setOnHold(true);
+
+    const tx = await client!.tx.compute.executeContract(
+      {
+        sender: address,
+        contractAddress: gameAddress,
+        codeHash: gameCodeHash,
+        msg: {
+          hold: {
+            seat: seat,
+          },
+        },
+        sentFunds: [],
+      },
+      {
+        gasLimit: 300000,
+      }
+    );
+
+    setOnHold(false);
+
+    if(tx.code !== 0) {
+      console.warn(tx.rawLog);
+    }
+  }
+
+  const findMySeat = (t : Table) => {
+    if(typeof client === "undefined") {
+      return -1;
+    }
+
+    for (let i: number = 0; i < 6; i++) {
+      if(t.players[i].address === client!.address) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  const stand = async () => {
+    const seat = findMySeat(table);
+    if (seat === -1) {
+      alert("Player isn't seated");
+    }
+
+
+    loading();
+
+    const tx = await client!.tx.compute.executeContract(
+      {
+        sender: client!.address,
+        contractAddress: gameAddress,
+        codeHash: gameCodeHash,
+        msg: {
+          stand: {
+            seat: seat,
+          },
+        },
+        sentFunds: [],
+      },
+      {
+        gasLimit: 100000,
+      }
+    );
+
+    if(tx.code !== 0) {
+      console.warn(tx.rawLog);
+    }
+  }
+
+  const getLastScore = async () => {
+    const seat = findMySeat(table);
+    if(seat !== -1) {
+      const scores = await getScores(client!, gameCodeHash, gameAddress);
+      if(hasPlayerScore(scores.players[seat])) {
+        const playerScore = scores.players[seat]!;
+        if(playerScore.address === client!.address) {
+          if(playerScore.won) {
+            winNotification(playerScore.score, scores.dealer.score, parseInt(playerScore.reward));
+          } else {
+            lostNotification(playerScore.score, scores.dealer.score, parseInt(playerScore.reward));
+          }
+        }
+      }
+    }
+  }
+
+  const kickEvent = async (index: number) => {
+    const kickedAddress = table.players[index].address;
+    loading();
+
+    const tx = await client!.tx.compute.executeContract(
+      {
+        sender: client!.address,
+        contractAddress: gameAddress,
+        codeHash: gameCodeHash,
+        msg: {
+          kick: {
+            target: kickedAddress,
+            seat: index,
+          },
+        },
+        sentFunds: [],
+      },
+      {
+        gasLimit: 100000,
+      }
+    );
+
+    if(tx.code !== 0) {
+      console.warn(tx.rawLog);
+    }
+  }
+
+  const sitEvent = async (index: number) => {
+    loading();
+    const tx = await client!.tx.compute.executeContract(
+      {
+        sender: client!.address,
+        contractAddress: gameAddress,
+        codeHash: gameCodeHash,
+        msg: {
+          sit: {
+            secret: Math.floor(Math.random()*(9223372036854775807-1+1)+1),
+            seat: index,
+          },
+        },
+        sentFunds: [],
+      },
+      {
+        gasLimit: 100000,
+      }
+    );
+
+    if(tx.code !== 0) {
+      console.warn(tx.rawLog);
+    }
+  }
+
+  const toGameCards = (cards: Card[]) => {
+    for (let card of cards) {
+      switch(card.value) {
+        case 'Two':
+          card.value = "2";
+          break;
+        case 'Three':
+          card.value = "3";
+          break;
+        case 'Four':
+          card.value = "4";
+          break;
+        case 'Five':
+          card.value = "5";
+          break;
+        case 'Six':
+          card.value = "6";
+          break;
+        case 'Seven':
+          card.value = "7";
+          break;
+        case 'Eight':
+          card.value = "8";
+          break;
+        case 'Nine':
+          card.value = "9";
+          break;
+        case 'Ten':
+          card.value = "10";
+          break;
+        case 'Jack':
+          card.value = "J";
+          break;
+        case 'Queen':
+          card.value = "Q";
+          break;
+        case 'King':
+          card.value = "K";
+          break;
+        case 'Ace':
+          card.value = "A";
+          break;
+      }
+      switch(card.suit) {
+        case 'Spade':
+          card.suit = '♠';
+          break;
+        case 'Diamond':
+          card.suit = '♦';
+          break;
+        case 'Club':
+          card.suit = '♣';
+          break;
+        case 'Heart':
+          card.suit = '♥';
+      }
+    }
+
+    return cards;
+  }
+
+  const cardToValue = (card: Card) => {
+    switch(card.value) {
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+      case '10`':
+        return parseInt(card.value);
+      case 'J':
+      case 'Q':
+      case 'K':
+        return 10;
+      case 'A':  
+        return 1;
       default:
-        break;
+        return 0;
     }
   }
 
-  const revealCard = () => {
-    dealerCards.filter((card: any) => {
-      if (card.hidden === true) {
-        card.hidden = false;
+  const getPlayerCards = (index: number) => {
+    if(!hasHand(table.players[index].hand)) {
+      return [];
+    }
+
+    return toGameCards(table.players[index].hand!.cards);
+  }
+
+  const getPlayerScore = (index: number) => {
+    if(!hasHand(table.players[index].hand)) {
+      return 0;
+    }
+
+    let sum = 0;
+    let hadAce = false;
+    let gameCards = toGameCards(table.players[index].hand!.cards);
+    for(const card of gameCards) {
+      sum += cardToValue(card);
+      if(card.value === "A") {
+        hadAce = true;
       }
-      return card;
-    });
-    setDealerCards([...dealerCards])
-  }
-
-  const calculate = (cards: any[]) => {
-    let total = 0;
-    cards.forEach((card: any) => {
-      if (card.hidden === false && card.value !== 'A') {
-        switch (card.value) {
-          case 'K':
-            total += 10;
-            break;
-          case 'Q':
-            total += 10;
-            break;
-          case 'J':
-            total += 10;
-            break;
-          default:
-            total += Number(card.value);
-            break;
-        }
-      }
-    });
-    const aces = cards.filter((card: any) => {
-      return card.value === 'A';
-    });
-    aces.forEach((card: any) => {
-      if (card.hidden === false) {
-        if ((total + 11) > 21) {
-          total += 1;
-        }
-        else if ((total + 11) === 21) {
-          if (aces.length > 1) {
-            total += 1;
-          }
-          else {
-            total += 11;
-          }
-        }
-        else {
-          total += 11;
-        }
-      }
-    });
-
-    return total;
-  }
-
-  const hit = () => {
-    drawCard(Deal.p0);
-    drawCard(Deal.p1);
-    drawCard(Deal.p2);
-    drawCard(Deal.p3);
-    drawCard(Deal.p4);
-    drawCard(Deal.p5);
-  }
-
-  const stand = () => {
-    buttonState.hitDisabled = true;
-    buttonState.standDisabled = true;
-    buttonState.resetDisabled = false;
-    setButtonState({ ...buttonState });
-    setGameState(GameState.dealerTurn);
-    revealCard();
-  }
-
-  const bust = () => {
-    buttonState.hitDisabled = true;
-    buttonState.standDisabled = true;
-    buttonState.resetDisabled = false;
-    setButtonState({ ...buttonState });
-    setMessage(Message.bust);
-  }
-
-  const checkWin = () => {
-    if (scores[0] > dealerScore || dealerScore > 21) {
-      setBalance(Math.round((balance + (bet * 2)) * 100) / 100);
-      setMessage(Message.userWin);
     }
-    else if (dealerScore > scores[0]) {
-      setMessage(Message.dealerWin);
+
+    if(sum <= 11 && hadAce) {
+      sum+= 10;
     }
-    else {
-      setBalance(Math.round((balance + (bet * 1)) * 100) / 100);
-      setMessage(Message.tie);
+
+    return sum;
+  }
+
+  const getDealerCards = () => {
+    if(!hasHand(table.dealer_hand)) {
+      return [];
     }
+
+    return toGameCards(table.dealer_hand!.cards);
+  }
+
+  const isPlayerRound = () => {
+    const seat = findMySeat(table);
+    if(seat === -1) {
+      return false;
+    }
+
+    if(!isPlayerTurn(table.state)) {
+      return false;
+    }
+
+    const pt = (table.state as PT).PlayerTurn;
+    return (pt.player_seat === seat);
+  }
+
+  const isPlayerFirstRound = () => {
+    const pt = (table.state as PT).PlayerTurn;
+    return isPlayerRound() && pt.is_first;
   }
 
   return (
     <>
-      <Status message={message} balance={balance} />
+      <Status message={controlsState.message} balance={balance} address={address}/>
       <Controls
-        balance={balance}
-        gameState={gameState}
-        buttonState={buttonState}
+        buttonState={controlsState.buttonState}
+        isFirstRound={isPlayerFirstRound()}
+        isMyRound={isPlayerRound()}
+        isSeated={findMySeat(table) !== -1}
         betEvent={placeBet}
         hitEvent={hit}
+        holdEvent={hold}
         standEvent={stand}
-        resetEvent={resetGame}
+        lastScoreEvent={getLastScore}
       />
-      <Hand title={`Dealer's Hand (${dealerScore})`} cards={dealerCards} />
-      <Hands cardsArr= {cards} scores= {scores}/>
+      <Hand title={`Dealer's Hand`} cards={getDealerCards()} isDealer={true} />
+      <Hands addresses={[table.players[0].address,
+      table.players[1].address,
+      table.players[2].address,
+      table.players[3].address,
+      table.players[4].address,
+      table.players[5].address,
+      ]}
+      cardsArr= {[getPlayerCards(0), 
+        getPlayerCards(1),
+        getPlayerCards(2),
+        getPlayerCards(3),
+        getPlayerCards(4),
+        getPlayerCards(5)]} 
+      scores= {[getPlayerScore(0),
+        getPlayerScore(1),
+        getPlayerScore(2),
+        getPlayerScore(3),
+        getPlayerScore(4),
+        getPlayerScore(5),
+      ]
+
+      }
+      kickButtonsState={controlsState.kickButtonsState}
+      sitButtonsState={controlsState.sitButtonsState}
+      kickEvent={kickEvent}
+      sitEvent={sitEvent}
+      />
+      <ToastContainer position="bottom-right"/>
     </>
   );
 }

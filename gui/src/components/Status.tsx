@@ -3,18 +3,23 @@ import styles from './styles/Status.module.css';
 
 type StatusProps = {
   message: string,
-  balance: number
+  balance: number,
+  address: string
 };
 
-const Status: React.FC<StatusProps> = ({ message, balance }) => {
+const Status: React.FC<StatusProps> = ({ message, balance, address }) => {
   return (
     <div className={styles.statusContainer}>
       <div className={styles.status}>
-        <h1 className={styles.value}>{message}</h1>
+        <h4 className={styles.value}>{address}</h4>
+      </div>
+      <div className={styles.status}>
+        <h2 className={styles.value}>{message}</h2>
       </div>
       <div className={styles.balance}>
-        <h1 className={styles.value}>{balance}𝕊</h1>
+        <h1 className={styles.value}>{balance} u𝕊</h1>
       </div>
+
     </div>
   );
 }
