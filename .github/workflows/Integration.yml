@@ -13,7 +13,7 @@ jobs:
         rust: [stable]
         make:
           - name: Run integration tests # Integration tests
-            task: "npx ts-node tests/integration.ts"
+            task: "npx ts-node contract/tests/integration.ts"
         include:
           - os: ubuntu-latest
             sccache-path: /home/runner/.cache/sccache
@@ -51,7 +51,7 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: Install dependencies
-        run: npm --prefix tests/ install # Install dependencies
+        run: npm --prefix contract/tests/ install # Install dependencies
       - uses: ./.github/actions/install-rust
         with:
           toolchain: ${{ matrix.rust }}

@@ -12,10 +12,14 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         rust: [stable]
         make:
-          - name: Clippy
-            task: "cargo clippy"
-          - name: Unit tests # Run unit tests
+          - name: Unit tests - Game # Run unit tests
+            task: "cd ./contract/game"
             task: "make unit-test"
+            task: "cd ../../"
+          - name: Unit tests - Bank # Run unit tests
+            task: "cd ./contract/bank"
+            task: "make unit-test"
+            task: "cd ../../"
         include:
           - os: ubuntu-latest
             sccache-path: /home/runner/.cache/sccache
@@ -58,10 +62,6 @@ jobs:
       - name: Add wasm toolchain
         run: |
           rustup target add wasm32-unknown-unknown
-      - name: Install Clippy
-        if: matrix.make.name == 'Clippy'
-        run: |
-          rustup component add clippy
       - name: Cache cargo registry
         uses: actions/cache@v2
         continue-on-error: false
