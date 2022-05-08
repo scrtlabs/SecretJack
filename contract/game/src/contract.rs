@@ -38,7 +38,7 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
             address: HumanAddr::default(),
             won: false,
             score: 0,
-            reward: Uint128::from(0 as u128)
+            reward: Uint128::from(0_u128)
         }
     };
 
@@ -122,14 +122,11 @@ pub fn get_player<'a>(
     }
 
     let player : &mut Player = table.players.get_mut(usize::from(seat)).unwrap();
-    match address {
-        Some(player_address) => {
-            if !player.address.eq(&player_address) {
-                return Err(StdError::generic_err("Wrong address for seated player"))
-            }
-        },
-        None => {},
-    };
+    if let Some(player_address) = address {
+        if !player.address.eq(player_address) {
+            return Err(StdError::generic_err("Wrong address for seated player"))
+        }
+    }
 
     Ok(player)
 }
@@ -182,7 +179,7 @@ pub fn remove_player<S: Storage, A: Api, Q: Querier>(
     }
 
     let player : &mut Player = table.players.get_mut(usize::from(seat)).unwrap();
-    if !player.address.eq(&address) {
+    if !player.address.eq(address) {
         return Err(StdError::generic_err("Wrong address for seated player"))
     }
 
@@ -208,14 +205,12 @@ pub fn get_player_score(deck: &PlayerHand) -> u8 {
     let mut result: u8 = deck.total_value;
 
     for card in deck.cards.iter() {
-        if card.value == Value::Ace {
-            if result + 10 <= 21 {
-                result += 10;
-            }
+        if (card.value == Value::Ace) && (result + 10 <= 21) {
+            result += 10;
         }
     }
 
-    return result;
+   result
 }
 
 pub fn play_dealer<S: Storage, A: Api, Q: Querier>(
@@ -223,19 +218,19 @@ pub fn play_dealer<S: Storage, A: Api, Q: Querier>(
     table: &mut Table
 ) -> StdResult<()> {
     let mut deck = read_deck(&deps.storage)?;
-    let mut dealer_deck = PlayerHand { cards: vec![], total_value: 0 };
+    let mut dealer_hand = table.dealer_hand.clone().unwrap();
     debug_print("Playing dealer");
-    while get_player_score(&dealer_deck) < 17 {
-        debug_print(format!("Dealer score is {}", get_player_score(&dealer_deck)));
-        dealer_deck.cards.push(deck.deck[usize::from(deck.next_free_card)]);
-        dealer_deck.total_value += get_card_value(&deck.deck[usize::from(deck.next_free_card)]);
+    while get_player_score(&dealer_hand) < 17 {
+        debug_print(format!("Dealer score is {}", get_player_score(&dealer_hand)));
+        dealer_hand.cards.push(deck.deck[usize::from(deck.next_free_card)]);
+        dealer_hand.total_value += get_card_value(&deck.deck[usize::from(deck.next_free_card)]);
         deck.next_free_card += 1;
     }
 
 
 
     store_deck(&mut deps.storage, &deck)?;
-    table.dealer_hand = Some(dealer_deck);
+    table.dealer_hand = Some(dealer_hand);
 
     Ok(())
 }
@@ -248,7 +243,7 @@ pub fn game_roundup<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<()> {
     let dealer_score = get_player_score(table.dealer_hand.as_ref().unwrap());
     let mut scores = Scores { players: [None,None,None,None,None,None],
-        dealer: PlayerResult{ address: HumanAddr::default(), won: false, score: dealer_score, reward:Uint128::from(0 as u128) } };
+        dealer: PlayerResult{ address: HumanAddr::default(), won: false, score: dealer_score, reward:Uint128::from(0_u128) } };
 
     for seat in 0..6 {
         let player = get_player(table, None, seat)?;
@@ -438,7 +433,7 @@ pub fn get_first_player_to_play(table: &mut Table) -> StdResult<u8> {
         }
     }
 
-    return Err(StdError::not_found("player"));
+    Err(StdError::not_found("player"))
 }
 
 pub fn get_random_seed<S: Storage, A: Api, Q: Querier>(
@@ -536,13 +531,10 @@ pub fn is_any_player_holding(table: &mut Table) -> StdResult<bool> {
     for seat in 0..6 {
         let player = get_player(table, None, seat)?;
         if !player.address.is_empty() {
-            match player.state {
-                PlayerState::Hold => {
-                    found = true;
-                    break;
-                }
-                _ => { },
-            };
+            if let PlayerState::Hold = player.state {
+                found = true;
+                break;
+            }
         }
     }
 
@@ -566,12 +558,9 @@ pub fn sit<S: Storage, A: Api, Q: Querier>(
     let mut msgs: Vec<CosmosMsg> = vec![];
 
     add_player(deps, &mut table,&env.message.sender, seat, secret)?;
-    match prev_state {
-        GameState::NoPlayers => {
-            table.state = GameState::PlayerTurn { player_seat: seat, is_first: true, turn_start_time: 0 };
-            on_game_state_change(deps, &env, &mut table, &prev_state, &mut msgs)?;
-        },
-        _ => {},
+    if let GameState::NoPlayers = prev_state {
+        table.state = GameState::PlayerTurn { player_seat: seat, is_first: true, turn_start_time: 0 };
+        on_game_state_change(deps, &env, &mut table, &prev_state, &mut msgs)?;
     }
 
     store_table(&mut deps.storage, &table)?;
@@ -648,7 +637,7 @@ pub fn bid<S: Storage, A: Api, Q: Querier>(
         _ => return Err(StdError::generic_err("Player can bid only on his turn"))
     }
 
-    if amount == Uint128::from(0 as u128) {
+    if amount == Uint128::from(0_u128) {
         return Err(StdError::generic_err("Amount should be set"));
     }
 
@@ -720,7 +709,7 @@ pub fn hit<S: Storage, A: Api, Q: Querier>(
         _ => {}
     }
 
-    on_player_state_change(deps, &mut player,&prev_player_state, &PlayerState::Hit)?;
+    on_player_state_change(deps, player,&prev_player_state, &PlayerState::Hit)?;
 
     store_table(&mut deps.storage, &table)?;
     Ok(HandleResponse::default())
@@ -783,21 +772,21 @@ fn get_user_balance<S: Storage, A: Api, Q: Querier>(
     address: &HumanAddr,
 ) -> StdResult<Binary> {
     let balance = read_user_balance(&deps.storage, address)?;
-    Ok(to_binary(&QueryAnswer::GetUserBalance { balance })?)
+    to_binary(&QueryAnswer::GetUserBalance { balance })
 }
 
 fn get_table_data<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
 ) -> StdResult<Binary> {
     let table = read_raw_table(&deps.storage)?;
-    Ok(to_binary(&QueryAnswer::GetTable { table })?)
+    to_binary(&QueryAnswer::GetTable { table })
 }
 
 fn get_last_score<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
 ) -> StdResult<Binary> {
     let scores = read_raw_scores(&deps.storage)?;
-    Ok(to_binary(&QueryAnswer::GetLastScore { last_score: scores })?)
+    to_binary(&QueryAnswer::GetLastScore { last_score: scores })
 }
 
 pub fn query<S: Storage, A: Api, Q: Querier>(
@@ -1118,7 +1107,7 @@ mod tests {
                     }
                 }
 
-                let msg = HandleMsg::Add { eq: EquationVariables { x: Uint128(10 as u128), y: Uint128(20 as u128) } };
+                let msg = HandleMsg::Add { eq: EquationVariables { x: Uint128(10_u128), y: Uint128(20_u128) } };
                 handle(&mut deps, env, msg).ok();
 
                 let msg = QueryMsg::GetUserCalculations {user_cookie: String::from(cookie)};

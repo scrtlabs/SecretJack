@@ -68,7 +68,7 @@ pub fn read_game_address<S: Storage>(storage: &S) -> StdResult<HumanAddr> {
 pub fn zero_user_balance<S: Storage>(storage: &mut S, address: &HumanAddr) -> StdResult<()> {
     let key = "balance".to_string() + address.as_str();
 
-    let balance : Uint128 = Uint128::from(0 as u128);
+    let balance : Uint128 = Uint128::from(0_u128);
     save(storage, key.as_bytes(), &balance)?;
 
     Ok(())
@@ -91,7 +91,7 @@ pub fn read_user_balance<S: Storage>(storage: &S, address: &HumanAddr) -> StdRes
     let key = "balance".to_string() + address.as_str();
     Ok(match load(storage, key.as_bytes()) {
         Ok(value) => value,
-        Err(_) => Uint128::from(0 as u128),
+        Err(_) => Uint128::from(0_u128),
     })
 }
 
