@@ -7,11 +7,5 @@
   },
   "dependencies": {
     "assert": "^2.0.0"
-  },
-  "compilerOptions": {
-    "lib": [
-        "es2017",
-        "dom"
-    ]
   }
 }
