@@ -21,7 +21,6 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         callback_code_hash: msg.game_contract_code_hash.to_lowercase(),
         msg: to_binary(&game_msg::InitMsg {
             bank_address: env.contract.address.clone(),
-            owner: env.message.sender.clone(),
             bank_code_hash: env.contract_code_hash.as_str().to_string(),
             secret: msg.secret,
         })?,
@@ -137,7 +136,7 @@ pub fn after_initialization_transaction<S: Storage, A: Api, Q: Querier>(
     }
 
     match msg {
-        HandleMsg::Withdraw { amount, to } => withdraw(deps, env, amount,  to,false),
+        HandleMsg::PayToWinner { amount, to } => withdraw(deps, env, amount,  to,false),
         _ => administrative_transaction(deps, env, msg),
     }
 }
@@ -150,7 +149,7 @@ pub fn administrative_transaction<S: Storage, A: Api, Q: Querier>(
     check_owner(deps, &env)?;
     match msg {
         HandleMsg::ChangeOwner {new_owner} => change_owner(deps, &env, new_owner),
-        HandleMsg::WithdrawAll {} => withdraw(
+        HandleMsg::EmergencyWithdrawAll {} => withdraw(
             deps,
             env.clone(),
             // In this case, make sure you take all the balance away, don't use the data in the state

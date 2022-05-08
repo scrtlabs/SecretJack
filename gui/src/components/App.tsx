@@ -3,7 +3,6 @@ import Status from './Status';
 import Controls from './Controls';
 import Hand from './Hand';
 import Hands from './Hands';
-import jsonData from '../deck.json';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { SecretNetworkClient, Wallet } from "secretjs";
@@ -172,8 +171,8 @@ const App: React.FC = () => {
   const [client, setClient] = useState<SecretNetworkClient>();
   const [onlyOnce, setOnlyOnce] = useState(true);
   const [onHold, setOnHold] = useState(false);
-  const gameCodeHash : string = "8168EA555899D9FA019726628206C18AD8FFB70A3C557BDBC0E6661E829F071F";
-  const gameAddress : string = "secret1sa9g3zz2q653x8c9ws2zzq7etkcpe8jm0cjxaa";
+  const gameCodeHash : string = "9F87BCBC889F89DB91C94C278576A715C02AB6A3C907831440E8DA77B3D06658";
+  const gameAddress : string = "secret1pcknsatx5ceyfu6zvtmz3yr8auumzrdt55n02p";
 
   const getClient = async () => {
     await window.keplr.enable('pulsar-2');
@@ -189,6 +188,18 @@ const App: React.FC = () => {
       wallet: keplrOfflineSigner,
       walletAddress: walletPubAddress,
     });
+
+    // const address = "secret1fc3fzy78ttp0lwuujw7e52rhspxn8uj52zfyne";
+    // const mnemonic = "jelly shadow frog dirt dragon use armed praise universe win jungle close inmate rain oil canvas beauty pioneer chef soccer icon dizzy thunder meadow";
+    // const wallet = new Wallet(mnemonic);
+    // setAddress(address);
+    // const nodeRpcAddress : string = "http://localhost:9091";
+    // const client = await SecretNetworkClient.create({
+    //   grpcWebUrl: nodeRpcAddress,
+    //   chainId: 'secretdev-1',
+    //   wallet: wallet,
+    //   walletAddress: address,
+    // });
   
     return client;
   }
@@ -730,7 +741,6 @@ const App: React.FC = () => {
   }
 
   const cardToValue = (card: Card) => {
-    console.warn(card.value);
     switch(card.value) {
       case '2':
       case '3':

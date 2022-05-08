@@ -493,7 +493,7 @@ pub fn start_new_round<S: Storage, A: Api, Q: Querier>(
         },
         Err(_) =>  {
             table.dealer_hand = None;
-            table.state = GameState::NoPlayers
+            table.state = GameState::NoPlayers;
         },
     }
 
@@ -617,7 +617,6 @@ pub fn stand<S: Storage, A: Api, Q: Querier>(
     })
 }
 
-
 pub fn bid<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
@@ -636,8 +635,15 @@ pub fn bid<S: Storage, A: Api, Q: Querier>(
                 return Err(StdError::generic_err("Player can bid only on his first turn"))
             }
 
-            table.dealer_hand = None;
             table.state = GameState::PlayerTurn {player_seat, is_first: false, turn_start_time};
+
+            let mut deck = read_deck(&deps.storage)?;
+            table.dealer_hand = Some(PlayerHand { cards: vec![], total_value: 0 });
+            table.dealer_hand.as_mut().unwrap().cards.push(deck.deck[usize::from(deck.next_free_card)]);
+            table.dealer_hand.as_mut().unwrap().total_value += get_card_value(&deck.deck[usize::from(deck.next_free_card)]);
+            deck.next_free_card += 1;
+            store_deck(&mut deps.storage, &deck)?;
+
         },
         _ => return Err(StdError::generic_err("Player can bid only on his turn"))
     }
