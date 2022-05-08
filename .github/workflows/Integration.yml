@@ -79,8 +79,10 @@ jobs:
             ${{ runner.os }}-sccache-
       - name: Start sccache server
         run: sccache --start-server
-      - name: Compile code
-        run: make build
+      - name: Compile game code
+        run: cd ../game/ ; make build; cp contract.wasm ../tests/game.wasm
+      - name: Compile bank code
+        run: cd ../bank/ ; make build; cp contract.wasm ../tests/bank.wasm
       - name: ${{ matrix.make.name }}
         run: ${{ matrix.make.task }}
       - name: Print sccache stats
