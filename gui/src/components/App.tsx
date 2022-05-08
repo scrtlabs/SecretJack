@@ -171,8 +171,8 @@ const App: React.FC = () => {
   const [client, setClient] = useState<SecretNetworkClient>();
   const [onlyOnce, setOnlyOnce] = useState(true);
   const [onHold, setOnHold] = useState(false);
-  const gameCodeHash : string = "C3B46D06A089B67D3B7488DD98EA1D3BCEA7448ED9D363E830C8E7A98FC70D0E";
-  const gameAddress : string = "secret1mjya8ptnhtnk58arvv2j8e2gfuky5u03v9vtaw";
+  const gameCodeHash : string = "93B8DF51E4BF301816A00AA58672A637F9207C0EF983B261BE2AAB5F3798C647";
+  const gameAddress : string = "secret1z6730hjd3ayhngu6et05nh26cccgcf69r4lh2z";
 
   const getClient = async () => {
     await window.keplr.enable('pulsar-2');

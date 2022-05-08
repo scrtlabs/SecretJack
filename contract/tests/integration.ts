@@ -215,7 +215,7 @@ async function queryBankBalance(
   bankCodeHash: string,
   bankAddress: string
 ): Promise<string> {
-  type BankBalanceResponse = { GetBankBalance: { balance: string } };
+  type BankBalanceResponse = { get_bank_balance: { balance: string } };
 
   const bankBalanceResponse = (await client.query.compute.queryContract({
     contractAddress: bankAddress,
@@ -231,7 +231,7 @@ async function queryBankBalance(
     );
   }
 
-  return bankBalanceResponse.GetBankBalance.balance;
+  return bankBalanceResponse.get_bank_balance.balance;
 }
 
 async function withdrawAllBankFunds(
@@ -1099,13 +1099,13 @@ async function runTwoPlayersFunction(
     gameAddress
   );
 
-  await runTwoPlayersFunction(
-    test_game_flow_two_players_kick,
-    client,
-    client2,
-    bankCodeHash,
-    bankAddress,
-    gameCodeHash,
-    gameAddress
-  );
+  // await runTwoPlayersFunction(
+  //   test_game_flow_two_players_kick,
+  //   client,
+  //   client2,
+  //   bankCodeHash,
+  //   bankAddress,
+  //   gameCodeHash,
+  //   gameAddress
+  // );
 })();

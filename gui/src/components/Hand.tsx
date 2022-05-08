@@ -24,8 +24,8 @@ const Hand: React.FC<HandProps> = ({ title, cards, isDealer, dealerScore }) => {
     if (cards.length === 1) {
       return (
         <div className={styles.cardContainer}>
-          <Card key={0} value={"K"} suit={'♠'} nocard={!isDealer} hidden={isDealer}/>
-          <Card key={1} value={cards[0].value} suit={cards[0].suit} nocard={cards[0].hidden} hidden={false}/>
+          <Card key={0} value={cards[0].value} suit={cards[0].suit} nocard={cards[0].hidden} hidden={false}/>
+          <Card key={1} value={"K"} suit={'♠'} nocard={!isDealer} hidden={isDealer}/>
         </div>
       );
     }
