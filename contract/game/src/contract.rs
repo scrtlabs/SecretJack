@@ -990,59 +990,6 @@ mod tests {
             turn_start_time: 0
         }));
     }
-
-    //Query tests
-    #[test]
-    fn test_get_user_balance() {
-        let mut deps = mock_dependencies(20,  &[Coin {
-            denom: "uscrt".to_string(),
-            amount: Uint128(10000000),
-        }]);
-
-        let msg = InitMsg{
-            bank_address: Default::default(),
-            bank_code_hash: "".to_string(),
-            secret: 0
-        };
-        let env = mock_env("user_balance", &[]);
-
-        let _init_res = init(&mut deps, env, msg).unwrap();
-
-        let msg = HandleMsg::GetCookie{};
-        let env = mock_env("cookie", &[]);
-        let res: HandleAnswer = from_binary(&handle(&mut deps, env.clone(), msg).unwrap().data.unwrap()).unwrap();
-
-        match res {
-            HandleAnswer::GetCookie{ status: _, ref cookie } => {
-                assert!(ensure_success(&res));
-                assert_eq!(&env.message.sender.to_string(), cookie);
-
-                let msg = QueryMsg::GetUserCalculations {user_cookie: String::from(cookie)};
-
-                let q_res: QueryAnswer = from_binary(&query(&mut deps,  msg).unwrap()).unwrap();
-                match q_res {
-                    QueryAnswer::GetUserCalculations {ref status, calculations} => {
-                        assert_eq!(0, calculations.len());
-                        assert!(!status.is_empty());
-                    }
-                }
-
-                let msg = HandleMsg::Add { eq: EquationVariables { x: Uint128(10_u128), y: Uint128(20_u128) } };
-                handle(&mut deps, env, msg).ok();
-
-                let msg = QueryMsg::GetUserCalculations {user_cookie: String::from(cookie)};
-
-                let q_res: QueryAnswer = from_binary(&query(&mut deps,  msg).unwrap()).unwrap();
-                match q_res {
-                    QueryAnswer::GetUserCalculations {ref status, calculations} => {
-                        assert_eq!(1, calculations.len());
-                        assert!(status.is_empty());
-                    }
-                }
-            }
-            _ => panic!("HandleAnswer for GetCookie should be GetCookie"),
-        }
-    }
 }
 
 
