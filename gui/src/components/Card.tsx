@@ -4,10 +4,11 @@ import styles from './styles/Card.module.css';
 type CardProps = {
   value: string;
   suit: string;
+  nocard: boolean;
   hidden: boolean;
 };
 
-const Card: React.FC<CardProps> = ({ value, suit, hidden }) => {
+const Card: React.FC<CardProps> = ({ value, suit, nocard, hidden }) => {
   const getColor = () => {
     if (suit === '♠' || suit === '♣') {
       return styles.black;
@@ -18,9 +19,15 @@ const Card: React.FC<CardProps> = ({ value, suit, hidden }) => {
   }
 
   const getCard = () => {
-    if (hidden) {
+    if (nocard) {
       return (
         <div className={styles.nocard} />
+      );
+    }
+
+    if (hidden) {
+      return (
+        <div className={styles.hiddenCard} />
       );
     }
     else {

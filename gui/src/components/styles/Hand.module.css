@@ -1,18 +1,10 @@
-.handControlsContainer {
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-  align-items: center;
-  margin: 0.5em 1em 1em 1em;
-}
-
 .handContainer {
   color: white;
   display: flex;
   align-items: center;
   flex-direction: column;
   margin-top: 2em;
-  margin-right: 2em;
+  justify-content: center;
 }
 
 .handsContainer {
@@ -22,17 +14,20 @@
   flex-direction: row;
   justify-content: center;
   margin: 3em 0.5em 0em 0.5em;
+  justify-content: space-between;
 }
 
 .cardContainer {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
+  align-items: center;
+  margin-right: 0.2em;
 }
 
 .playerTitle {
   text-align: center;
-  font-size: 6px;
+  font-size: 9px;
 }
 
 .title {

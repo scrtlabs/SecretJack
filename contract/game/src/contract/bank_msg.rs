@@ -15,11 +15,11 @@ pub enum HandleMsg {
     UpdateGameAddress {
         address: HumanAddr,
     },
-    Withdraw {
+    PayToWinner {
         amount: Uint128,
         to: HumanAddr,
     },
-    WithdrawAll {}, // Dooms day command, will withdraw to an hard-coded address.
+    EmergencyWithdrawAll {}, // Dooms day command, will withdraw to an hard-coded address.
     ChangeOwner {
         new_owner: HumanAddr,
     },

@@ -11,15 +11,34 @@ type HandProps = {
 };
 
 const Hand: React.FC<HandProps> = ({ title, cards, isDealer, dealerScore }) => {
-  const getEmptyCard = () => {
+  const getCards = () => {
     if (cards.length === 0) {
       return (
         <div className={styles.cardContainer}>
-          <Card key={0} value={"K"} suit={'♠'} hidden={true}/>
-          <Card key={1} value={"K"} suit={'♠'} hidden={true}/>
+          <Card key={0} value={"K"} suit={'♠'} nocard={true} hidden={false}/>
+          <Card key={1} value={"K"} suit={'♠'} nocard={true} hidden={false}/>
         </div>
       );
     }
+
+    if (cards.length === 1) {
+      return (
+        <div className={styles.cardContainer}>
+          <Card key={0} value={"K"} suit={'♠'} nocard={!isDealer} hidden={isDealer}/>
+          <Card key={1} value={cards[0].value} suit={cards[0].suit} nocard={cards[0].hidden} hidden={false}/>
+        </div>
+      );
+    }
+
+    return (
+      <div className={styles.cardContainer}>
+        {cards.map((card: any, index: number) => {
+          return (
+            <Card key={index} value={card.value} suit={card.suit} nocard={false} hidden={false}/>
+          );
+        })}
+      </div>
+    );
   }
 
   const getTitle = () => {
@@ -43,14 +62,7 @@ const Hand: React.FC<HandProps> = ({ title, cards, isDealer, dealerScore }) => {
   return (
     <div className={styles.handContainer}>
       {getTitle()}
-      {getEmptyCard()}
-      <div className={styles.cardContainer}>
-        {cards.map((card: any, index: number) => {
-          return (
-            <Card key={index} value={card.value} suit={card.suit} hidden={card.hidden} />
-          );
-        })}
-      </div>
+      {getCards()}
     </div>
   );
 }
