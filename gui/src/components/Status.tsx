@@ -17,7 +17,7 @@ const Status: React.FC<StatusProps> = ({ message, balance, address }) => {
         <h2 className={styles.value}>{message}</h2>
       </div>
       <div className={styles.balance}>
-        <h1 className={styles.value}>betting on: {balance} u𝕊</h1>
+        <h1 className={styles.value}>Betting on: {balance} u𝕊</h1>
       </div>
 
     </div>
