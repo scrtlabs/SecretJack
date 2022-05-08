@@ -80,9 +80,9 @@ jobs:
       - name: Start sccache server
         run: sccache --start-server
       - name: Compile game code
-        run: cd ../game/ ; make build; cp contract.wasm ../tests/game.wasm
+        run: cd contract/game/ ; make build; cp contract.wasm ../tests/game.wasm; cd -
       - name: Compile bank code
-        run: cd ../bank/ ; make build; cp contract.wasm ../tests/bank.wasm
+        run: cd contract/bank/ ; make build; cp contract.wasm ../tests/bank.wasm; cd -
       - name: ${{ matrix.make.name }}
         run: ${{ matrix.make.task }}
       - name: Print sccache stats
