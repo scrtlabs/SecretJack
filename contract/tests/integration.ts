@@ -855,6 +855,90 @@ async function test_normal_game_flow_two_players(
   await stand(client2, gameCodeHash, gameAddress, seat2);
 }
 
+async function test_stand_while_other_is_playing(
+  client: SecretNetworkClient,
+  client2: SecretNetworkClient,
+  bankCodeHash: string,
+  bankAddress: string,
+  gameCodeHash: string,
+  gameAddress: string
+) {
+  const seat: number = 3;
+  const seat2: number = 5;
+
+  await sit(client, gameCodeHash, gameAddress, seat);
+  await sit(client2, gameCodeHash, gameAddress, seat2);
+
+  const prevBankBalance: string = await queryBankBalance(
+    client,
+    bankCodeHash,
+    bankAddress
+  );
+
+  const prevWalletBalanceP1: string = (
+    await client.query.bank.balance({
+      address: client.address,
+      denom: "uscrt",
+    })
+  ).balance!.amount;
+
+  const bet: string = "10000000";
+  await bid(client, gameCodeHash, gameAddress, seat, bet);
+
+  const userBalance: string = await queryUserBalance(
+    client,
+    gameCodeHash,
+    gameAddress,
+    client.address
+  );
+  assert(
+    userBalance === bet,
+    `User bid wasn't accepted during game flow ${userBalance}`
+  );
+
+  let table: Table = await getTable(client, gameCodeHash, gameAddress);
+  assert(
+    isPlayerTurn(table.state) && table.players[seat].state === "Bid",
+    `Expected game state is player ${seat} turn`
+  );
+
+  await stand(client2, gameCodeHash, gameAddress, seat2);
+
+  while (table.players[seat].hand!.total_value < 17) {
+    await hit(client, gameCodeHash, gameAddress, seat);
+    table = await getTable(client, gameCodeHash, gameAddress);
+  }
+
+  await hold(client, gameCodeHash, gameAddress, seat);
+
+  table = await getTable(client, gameCodeHash, gameAddress);
+  const state = table.state;
+  assert(
+    isPlayerTurn(state),
+    `State expected to be player ${seat} turn instead of ${JSON.stringify(
+      state
+    )}`
+  );
+  assert(
+    (state as PT).PlayerTurn.player_seat === seat,
+    `State expected to be player ${seat} turn instead of ${JSON.stringify(
+      state
+    )}`
+  );
+
+  await roundup(
+    client,
+    prevBankBalance,
+    [{ seat: seat, prevBalance: prevWalletBalanceP1 }],
+    bankCodeHash,
+    bankAddress,
+    gameCodeHash,
+    gameAddress
+  );
+
+  await stand(client, gameCodeHash, gameAddress, seat);
+}
+
 async function test_game_flow_two_players_stand(
   client: SecretNetworkClient,
   client2: SecretNetworkClient,
@@ -975,7 +1059,7 @@ async function test_game_flow_two_players_kick(
     )}`
   );
 
-  await delay(6 * 60 * 1000);
+  await delay(2 * 60 * 1000);
 
   await kick(client2, gameCodeHash, gameAddress, seat2, client2.address);
 
@@ -1070,9 +1154,20 @@ async function runTwoPlayersFunction(
     gameCodeHash,
     gameAddress
   );
+
   await runTestFunction(
     test_normal_game_flow,
     client,
+    bankCodeHash,
+    bankAddress,
+    gameCodeHash,
+    gameAddress
+  );
+
+  await runTwoPlayersFunction(
+    test_stand_while_other_is_playing,
+    client,
+    client2,
     bankCodeHash,
     bankAddress,
     gameCodeHash,
@@ -1099,13 +1194,13 @@ async function runTwoPlayersFunction(
     gameAddress
   );
 
-  // await runTwoPlayersFunction(
-  //   test_game_flow_two_players_kick,
-  //   client,
-  //   client2,
-  //   bankCodeHash,
-  //   bankAddress,
-  //   gameCodeHash,
-  //   gameAddress
-  // );
+  await runTwoPlayersFunction(
+    test_game_flow_two_players_kick,
+    client,
+    client2,
+    bankCodeHash,
+    bankAddress,
+    gameCodeHash,
+    gameAddress
+  );
 })();

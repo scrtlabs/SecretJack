@@ -27,7 +27,13 @@
 
 .playerTitle {
   text-align: center;
-  font-size: 9px;
+  font-size: 13px;
+}
+
+.hiddenPlayerTitle {
+  text-align: center;
+  font-size: 13px;
+  opacity: 0;
 }
 
 .title {
@@ -36,7 +42,11 @@
 
 @media screen and (max-width: 600px) {
   .playerTitle {
-    font-size: 9px;
+    font-size: 7px;
+  }
+
+  .hiddenPlayerTitle {
+    font-size: 7px;
   }
   
   .title {

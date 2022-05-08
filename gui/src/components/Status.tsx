@@ -11,13 +11,13 @@ const Status: React.FC<StatusProps> = ({ message, balance, address }) => {
   return (
     <div className={styles.statusContainer}>
       <div className={styles.status}>
-        <h4 className={styles.value}>{address}</h4>
+        <h4 className={styles.value}>Playing as: {address}</h4>
       </div>
       <div className={styles.status}>
         <h2 className={styles.value}>{message}</h2>
       </div>
       <div className={styles.balance}>
-        <h1 className={styles.value}>{balance} u𝕊</h1>
+        <h1 className={styles.value}>betting on: {balance} u𝕊</h1>
       </div>
 
     </div>

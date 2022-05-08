@@ -77,6 +77,9 @@ pub enum HandleMsg {
     Hold {
         seat: u8,
     },
+    HoldIfBust {
+        seat: u8,
+    },
     Sit {
         secret: u64,
         seat: u8,

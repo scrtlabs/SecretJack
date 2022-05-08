@@ -54,6 +54,12 @@ const Hand: React.FC<HandProps> = ({ title, cards, isDealer, dealerScore }) => {
       }
     } 
 
+    if(title === "") {
+      return (
+        <h1 className={styles.hiddenPlayerTitle}>secret162y...djv</h1>
+      );
+    }
+
     return (
       <h1 className={styles.playerTitle}>{title}</h1>
     );

@@ -5,7 +5,7 @@ import Hand from './Hand';
 import Hands from './Hands';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { SecretNetworkClient, Wallet } from "secretjs";
+import { MsgExecuteContract, SecretNetworkClient, Wallet } from "secretjs";
 
 declare global {
   interface Window {
@@ -171,8 +171,8 @@ const App: React.FC = () => {
   const [client, setClient] = useState<SecretNetworkClient>();
   const [onlyOnce, setOnlyOnce] = useState(true);
   const [onHold, setOnHold] = useState(false);
-  const gameCodeHash : string = "93B8DF51E4BF301816A00AA58672A637F9207C0EF983B261BE2AAB5F3798C647";
-  const gameAddress : string = "secret1z6730hjd3ayhngu6et05nh26cccgcf69r4lh2z";
+  const gameCodeHash : string = "2B38957CEF5C5D7F1111022E5FB9BC9895320E266DA6C1C943D685BDCB8BA099";
+  const gameAddress : string = "secret16jetvjuaw8upd66rtle92x4mcck0dmnnntnprz";
 
   const getClient = async () => {
     await window.keplr.enable('pulsar-2');
@@ -370,7 +370,7 @@ const App: React.FC = () => {
             } else {
               
               newKickButtonsState[i].canBeKicked = (findMySeat(table) !== i);
-              let timer = 300 - (Math.round(Date.now() / 1000) - pt.turn_start_time);
+              let timer = 90 - (Math.round(Date.now() / 1000) - pt.turn_start_time);
               if(timer < 0) {
                 timer = 0;
               }
@@ -442,22 +442,6 @@ const App: React.FC = () => {
           newMessage = Message.bet;
           return;
       } 
-      
-      if(!onHold) {
-        if(playerScore === 21) {
-            newMessage = Message.blackjack;
-            newButtonState = {hitDisabled: true, holdDisabled: true, standDisabled: true};
-            hold();
-            return;
-        }
-        
-        if(playerScore > 21) {
-            newMessage = Message.bust;
-            newButtonState = {hitDisabled: true, holdDisabled: true, standDisabled: true};
-            hold();
-            return;
-        }
-      }
     }
 
     updatePlayerButtons();
@@ -509,9 +493,7 @@ const App: React.FC = () => {
     }
 
     loading();
-
-    const tx = await client!.tx.compute.executeContract(
-      {
+    const hitMsg = new MsgExecuteContract({
         sender: address,
         contractAddress: gameAddress,
         codeHash: gameCodeHash,
@@ -521,11 +503,25 @@ const App: React.FC = () => {
           },
         },
         sentFunds: [],
+      });
+
+    const holdIfBustMsg = new MsgExecuteContract({
+      sender: address,
+      contractAddress: gameAddress,
+      codeHash: gameCodeHash,
+      msg: {
+        hold_if_bust: {
+          seat: seat,
+        },
       },
-      {
-        gasLimit: 100000,
-      }
-    );
+      sentFunds: [],
+    });
+
+    
+
+    const tx = await client!.tx.broadcast([hitMsg, holdIfBustMsg], {
+      gasLimit: 200_000,
+    });
 
     if(tx.code !== 0) {
       console.warn(tx.rawLog);
@@ -771,6 +767,14 @@ const App: React.FC = () => {
     return toGameCards(table.players[index].hand!.cards);
   }
 
+  const shortenAddress = (address: string) => {
+    if(address === "") {
+      return "";
+    }
+
+    return address.slice(0,9) + "..." + address.slice(-3)
+  }
+
   const getPlayerScore = (index: number) => {
     return getHandScore(table.players[index].hand);
   }
@@ -842,13 +846,13 @@ const App: React.FC = () => {
         standEvent={stand}
         lastScoreEvent={getLastScore}
       />
-      <Hand title={`Dealer's Hand`} cards={getDealerCards()} isDealer={true} dealerScore={getDealerScore()} />
-      <Hands addresses={[table.players[0].address,
-      table.players[1].address,
-      table.players[2].address,
-      table.players[3].address,
-      table.players[4].address,
-      table.players[5].address,
+      <Hand title={`Dealer`} cards={getDealerCards()} isDealer={true} dealerScore={getDealerScore()} />
+      <Hands addresses={[shortenAddress(table.players[0].address),
+      shortenAddress(table.players[1].address),
+      shortenAddress(table.players[2].address),
+      shortenAddress(table.players[3].address),
+      shortenAddress(table.players[4].address),
+      shortenAddress(table.players[5].address),
       ]}
       cardsArr= {[getPlayerCards(0), 
         getPlayerCards(1),
