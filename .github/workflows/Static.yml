@@ -13,13 +13,9 @@ jobs:
         rust: [stable]
         make:
           - name: Unit tests - Game # Run unit tests
-            task: "cd ./contract/game"
-            task: "make unit-test"
-            task: "cd ../../"
+            task: "cd ./contract/game; make unit-test; cd -"
           - name: Unit tests - Bank # Run unit tests
-            task: "cd ./contract/bank"
-            task: "make unit-test"
-            task: "cd ../../"
+            task: "cd ./contract/bank; make unit-test; cd -"
         include:
           - os: ubuntu-latest
             sccache-path: /home/runner/.cache/sccache
