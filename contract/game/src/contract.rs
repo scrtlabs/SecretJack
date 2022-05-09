@@ -112,6 +112,26 @@ pub fn hold<S: Storage, A: Api, Q: Querier>(
     })
 }
 
+pub fn hold_if_bust<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+    seat: u8,
+) -> HandleResult {
+    let mut table = read_table(&deps.storage)?;
+
+    let player= get_player(&mut table, Some(&env.message.sender), seat)?;
+    match player.hand.clone() {
+        Some(hand) =>  {
+            if hand.total_value >= 21 {
+                hold(deps, env, seat)
+            } else {
+                Ok(HandleResponse::default())
+            }
+        }
+        None => Ok(HandleResponse::default())
+    }
+}
+
 pub fn get_player<'a>(
     table: &'a mut Table,
     address: Option<&HumanAddr>,
@@ -594,9 +614,17 @@ pub fn stand<S: Storage, A: Api, Q: Querier>(
     }
 
     remove_player(deps, &mut table, &env.message.sender, seat)?;
-    advance_to_next_player(deps, &env, &mut table, seat, true)?;
 
-    on_game_state_change(deps, &env, &mut table, &GameState::PlayerTurn { player_seat: seat, is_first: true, turn_start_time: 0 }, &mut msgs)?;
+    match table.state {
+        GameState::PlayerTurn { player_seat, is_first: _, turn_start_time: _ } => {
+            if player_seat == seat {
+                advance_to_next_player(deps, &env, &mut table, seat, true)?;
+                on_game_state_change(deps, &env, &mut table, &GameState::PlayerTurn { player_seat: seat, is_first: true, turn_start_time: 0 }, &mut msgs)?;
+            }
+        }
+        _ => {}
+    }
+
     store_table(&mut deps.storage, &table)?;
 
     Ok(HandleResponse {
@@ -604,6 +632,21 @@ pub fn stand<S: Storage, A: Api, Q: Querier>(
         log: vec![],
         data: None
     })
+}
+
+pub fn deal_first_dealer_card<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    table: &mut Table) -> StdResult<()> {
+    let mut deck = read_deck(&deps.storage)?;
+    let mut hand = PlayerHand { cards: vec![], total_value: 0 };
+    hand.cards.push(deck.deck[usize::from(deck.next_free_card)]);
+    hand.total_value += get_card_value(&deck.deck[usize::from(deck.next_free_card)]);
+
+    table.dealer_hand = Some(hand);
+    deck.next_free_card += 1;
+    store_deck(&mut deps.storage, &deck)?;
+
+    Ok(())
 }
 
 pub fn bid<S: Storage, A: Api, Q: Querier>(
@@ -626,12 +669,16 @@ pub fn bid<S: Storage, A: Api, Q: Querier>(
 
             table.state = GameState::PlayerTurn {player_seat, is_first: false, turn_start_time};
 
-            let mut deck = read_deck(&deps.storage)?;
-            table.dealer_hand = Some(PlayerHand { cards: vec![], total_value: 0 });
-            table.dealer_hand.as_mut().unwrap().cards.push(deck.deck[usize::from(deck.next_free_card)]);
-            table.dealer_hand.as_mut().unwrap().total_value += get_card_value(&deck.deck[usize::from(deck.next_free_card)]);
-            deck.next_free_card += 1;
-            store_deck(&mut deps.storage, &deck)?;
+            match table.dealer_hand.clone() {
+                Some(hand) => {
+                    if hand.cards.len() != 1 {
+                        deal_first_dealer_card(deps, &mut table)?;
+                    }
+                }
+                None => {
+                    deal_first_dealer_card(deps, &mut table)?;
+                }
+            }
 
         },
         _ => return Err(StdError::generic_err("Player can bid only on his turn"))
@@ -731,8 +778,8 @@ pub fn kick<S: Storage, A: Api, Q: Querier>(
                 return Err(StdError::generic_err("Player can kick only playing player"))
             }
 
-            if (env.block.time - turn_start_time) < 300 { // 5 minutes
-                return Err(StdError::generic_err("Player can be kicked only after 5 minutes of idle time"))
+            if (env.block.time - turn_start_time) < 90 { // 1.5 minutes
+                return Err(StdError::generic_err("Player can be kicked only after 1.5 minutes of idle time"))
             }
 
         },
@@ -759,6 +806,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<HandleResponse> {
     match msg {
         HandleMsg::Hold {seat} => hold(deps, env, seat),
+        HandleMsg::HoldIfBust {seat} => hold_if_bust(deps, env, seat),
         HandleMsg::Bid {seat, amount} => bid(deps, env, seat, amount),
         HandleMsg::Sit {seat, secret} => sit(deps, env, seat, secret),
         HandleMsg::Stand {seat} => stand(deps, env, seat),
@@ -941,187 +989,6 @@ mod tests {
             is_first: true,
             turn_start_time: 0
         }));
-    }
-
-    #[test]
-    fn test_stand() {
-        let mut deps = mock_dependencies(20,  &[Coin {
-            denom: "uscrt".to_string(),
-            amount: Uint128(10000000),
-        }]);
-
-        let msg = InitMsg{
-            bank_address: Default::default(),
-            bank_code_hash: "".to_string(),
-            secret: 1234
-        };
-        let env = mock_env("unsit", &[]);
-
-        let _init_res = init(&mut deps, env.clone(), msg).unwrap();
-
-
-        // No other players
-        let msg = HandleMsg::Sit { secret: 4321, seat: 4 };
-
-        let res = handle(&mut deps, env.clone(), msg.clone());
-        assert!(res.is_ok(), format!("{:?}", res.unwrap_err()));
-
-        assert!(validate_game_state(&read_table(&deps.storage).unwrap(), GameState::PlayerTurn {
-            player_seat: 4,
-            is_first: true,
-            turn_start_time: 0
-        }));
-
-        let msg = HandleMsg::Stand { seat: 5 };
-
-        let res = handle(&mut deps, env.clone(), msg.clone());
-        assert!(res.is_err(), "Seat wasn't occupied");
-
-        let msg = HandleMsg::Stand { seat: 4 };
-
-        let res = handle(&mut deps, env.clone(), msg.clone());
-        assert!(res.is_ok(), format!("{:?}", res.unwrap_err()));
-
-        assert!(validate_game_state(&read_table(&deps.storage).unwrap(), GameState::NoPlayers));
-
-        let msg = HandleMsg::Sit { secret: 4321, seat: 4 };
-
-        let res = handle(&mut deps, env.clone(), msg.clone());
-        assert!(res.is_ok(), format!("{:?}", res.unwrap_err()));
-
-        let nenv = mock_env("new_unsit", &[]);
-        let msg = HandleMsg::Sit { secret: 4321, seat: 5 };
-
-        let res = handle(&mut deps, nenv.clone(), msg.clone());
-        assert!(res.is_ok(), format!("{:?}", res.unwrap_err()));
-
-        let msg = HandleMsg::Stand { seat: 4 };
-
-        let res = handle(&mut deps, env.clone(), msg.clone());
-        assert!(res.is_ok(), format!("{:?}", res.unwrap_err()));
-
-        assert!(validate_game_state(&read_table(&deps.storage).unwrap(), GameState::PlayerTurn {
-            player_seat: 5,
-            is_first: true,
-            turn_start_time: 0
-        }));
-    }
-
-    #[test]
-    fn test_stand() {
-        let mut deps = mock_dependencies(20,  &[Coin {
-            denom: "uscrt".to_string(),
-            amount: Uint128(10000000),
-        }]);
-
-        let msg = InitMsg{
-            bank_address: Default::default(),
-            bank_code_hash: "".to_string(),
-            secret: 1234
-        };
-        let env = mock_env("unsit", &[]);
-
-        let _init_res = init(&mut deps, env.clone(), msg).unwrap();
-
-
-        // No other players
-        let msg = HandleMsg::Sit { secret: 4321, seat: 4 };
-
-        let res = handle(&mut deps, env.clone(), msg.clone());
-        assert!(res.is_ok(), format!("{:?}", res.unwrap_err()));
-
-        assert!(validate_game_state(&read_table(&deps.storage).unwrap(), GameState::PlayerTurn {
-            player_seat: 4,
-            is_first: true,
-            turn_start_time: 0
-        }));
-
-        let msg = HandleMsg::Stand { seat: 5 };
-
-        let res = handle(&mut deps, env.clone(), msg.clone());
-        assert!(res.is_err(), "Seat wasn't occupied");
-
-        let msg = HandleMsg::Stand { seat: 4 };
-
-        let res = handle(&mut deps, env.clone(), msg.clone());
-        assert!(res.is_ok(), format!("{:?}", res.unwrap_err()));
-
-        assert!(validate_game_state(&read_table(&deps.storage).unwrap(), GameState::NoPlayers));
-
-        let msg = HandleMsg::Sit { secret: 4321, seat: 4 };
-
-        let res = handle(&mut deps, env.clone(), msg.clone());
-        assert!(res.is_ok(), format!("{:?}", res.unwrap_err()));
-
-        let nenv = mock_env("new_unsit", &[]);
-        let msg = HandleMsg::Sit { secret: 4321, seat: 5 };
-
-        let res = handle(&mut deps, nenv.clone(), msg.clone());
-        assert!(res.is_ok(), format!("{:?}", res.unwrap_err()));
-
-        let msg = HandleMsg::Stand { seat: 4 };
-
-        let res = handle(&mut deps, env.clone(), msg.clone());
-        assert!(res.is_ok(), format!("{:?}", res.unwrap_err()));
-
-        assert!(validate_game_state(&read_table(&deps.storage).unwrap(), GameState::PlayerTurn {
-            player_seat: 5,
-            is_first: true,
-            turn_start_time: 0
-        }));
-    }
-
-    //Query tests
-    #[test]
-    fn test_get_user_balance() {
-        let mut deps = mock_dependencies(20,  &[Coin {
-            denom: "uscrt".to_string(),
-            amount: Uint128(10000000),
-        }]);
-
-        let msg = InitMsg{
-            bank_address: Default::default(),
-            bank_code_hash: "".to_string(),
-            secret: 0
-        };
-        let env = mock_env("user_balance", &[]);
-
-        let _init_res = init(&mut deps, env, msg).unwrap();
-
-        let msg = HandleMsg::GetCookie{};
-        let env = mock_env("cookie", &[]);
-        let res: HandleAnswer = from_binary(&handle(&mut deps, env.clone(), msg).unwrap().data.unwrap()).unwrap();
-
-        match res {
-            HandleAnswer::GetCookie{ status: _, ref cookie } => {
-                assert!(ensure_success(&res));
-                assert_eq!(&env.message.sender.to_string(), cookie);
-
-                let msg = QueryMsg::GetUserCalculations {user_cookie: String::from(cookie)};
-
-                let q_res: QueryAnswer = from_binary(&query(&mut deps,  msg).unwrap()).unwrap();
-                match q_res {
-                    QueryAnswer::GetUserCalculations {ref status, calculations} => {
-                        assert_eq!(0, calculations.len());
-                        assert!(!status.is_empty());
-                    }
-                }
-
-                let msg = HandleMsg::Add { eq: EquationVariables { x: Uint128(10_u128), y: Uint128(20_u128) } };
-                handle(&mut deps, env, msg).ok();
-
-                let msg = QueryMsg::GetUserCalculations {user_cookie: String::from(cookie)};
-
-                let q_res: QueryAnswer = from_binary(&query(&mut deps,  msg).unwrap()).unwrap();
-                match q_res {
-                    QueryAnswer::GetUserCalculations {ref status, calculations} => {
-                        assert_eq!(1, calculations.len());
-                        assert!(status.is_empty());
-                    }
-                }
-            }
-            _ => panic!("HandleAnswer for GetCookie should be GetCookie"),
-        }
     }
 }
 
