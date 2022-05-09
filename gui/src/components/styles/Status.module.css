@@ -9,28 +9,54 @@
   justify-content: center;
   margin: 0.5em 0.5em 0.5em 1em;
   padding: 1em;
-  width: 60%;
+  flex-grow: 1;
   background: rgb(58, 58, 58);
   border: 5px solid white;
   border-radius: 15px;
   box-shadow: 0px 1px 10px rgb(0, 0, 0);
 }
 
-.balance {
+.message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.5em 0.5em 0.5em 1em;
+  padding: 1em;
+  flex-grow: 2;
+  background: blanchedalmond;
+  border: 6px solid black;
+  border-radius: 15px;
+  box-shadow: 0px 1px 10px rgb(0, 0, 0);
+}
+
+.bet {
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0.5em 1em 0.5em 0.5em;
   padding: 1em;
-  width: 30%;
+  flex-grow: 1;
   background: rgb(58, 58, 58);
   border: 5px solid white;
   border-radius: 15px;
   box-shadow: 0px 1px 10px rgb(0, 0, 0);
 }
 
+
+
 .value {
   color: white;
+  text-align: center;
+}
+
+.betValue {
+  color: white;
+  font-size: 16px;
+  text-align: center;
+}
+
+.messageValue {
+  color: black;
   text-align: center;
 }
 

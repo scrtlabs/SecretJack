@@ -156,6 +156,7 @@ const App: React.FC = () => {
   });
 
   const [balance, setBalance] = useState(0);
+  const [walletBalance, setWalletBalance] = useState(0);
 
   const [controlsState, setControlsState] = useState({
   message: "", 
@@ -272,6 +273,13 @@ const App: React.FC = () => {
 
     setTable(newTable);
     setBalance(await getUserBalance(client!, gameCodeHash, gameAddress));
+
+    const balance = await client!.query.bank.balance({
+      address: client!.address,
+      denom: "uscrt",
+    });
+
+    setWalletBalance(parseInt(balance.balance!.amount));
   }
 
   useEffect(() => {
@@ -834,7 +842,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      <Status message={controlsState.message} balance={balance} address={address}/>
+      <Status message={controlsState.message} bet={balance} balance={walletBalance}/>
       <Controls
         buttonState={controlsState.buttonState}
         isFirstRound={isPlayerFirstRound()}
